@@ -1,12 +1,38 @@
 {
-  "name": "svg-reactor",
+  "name": "sausvge",
+  "version": "0.1.0",
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build:react": "bun bin/cli.ts build example/react/index.tsx dist/react-app.svg",
+    "build:svelte": "bun bin/cli.ts build example/svelte/index.ts dist/svelte-app.svg",
+    "build:vue": "bun bin/cli.ts build example/vue/index.ts dist/vue-app.svg",
+    "build:vanilla": "bun bin/cli.ts build example/vanilla/index.js dist/vanilla-app.svg",
+    "build:vanilla-html": "bun bin/cli.ts build example/vanilla/index.html dist/vanilla-html-app.svg",
+    "build:all": "bun run build:react && bun run build:svelte && bun run build:vue && bun run build:vanilla && bun run build:vanilla-html",
+    "view:react": "bun --hot view.ts dist/react-app.svg",
+    "view:svelte": "bun --hot view.ts dist/svelte-app.svg",
+    "view:vue": "bun --hot view.ts dist/vue-app.svg",
+    "view:vanilla": "bun --hot view.ts dist/vanilla-app.svg",
+    "dev:react": "bun run build:react && bun run view:react",
+    "dev:svelte": "bun run build:svelte && bun run view:svelte",
+    "dev:vue": "bun run build:vue && bun run view:vue",
+    "dev:vanilla": "bun run build:vanilla && bun run view:vanilla"
+  },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "esbuild": "^0.19.12",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
+    "svelte": "^4.2.8",
+    "vue": "^3.4.21"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "esbuild-svelte": "^0.9.4",
+    "esbuild-vue": "^0.1.0"
   }
 }

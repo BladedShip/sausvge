@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Vanilla HTML Color Palette Generator</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <h1>SVG Vanilla HTML App</h1>
+    <p class="subtitle">Color Palette Generator</p>
+
+    <div class="controls-section">
+      <div class="color-input-group">
+        <label for="base-color">Base Color:</label>
+        <input type="color" id="base-color" data-base-color="" value="#667eea">
+      </div>
+      <button data-generate="" class="generate-btn">Generate Palette</button>
+      <button data-random="" class="random-btn">Random Color</button>
+    </div>
+
+    <div data-palette="" class="palette"></div>
+
+    <div class="info-section">
+      <h2>Color Information</h2>
+      <div data-color-info="" class="color-info">
+        <p>Click on a color swatch to see its details</p>
+      </div>
+    </div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>
