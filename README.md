@@ -1,4 +1,4 @@
-# Sausvge
+# Sausvge - WIP
 
 > **Sausvge** (pronounced "sausage") - Because sometimes you just need to stuff your website into a single SVG file and make it work somehow.
 
