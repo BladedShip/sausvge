@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+
 export type Framework = 'react' | 'svelte' | 'vue' | 'vanilla';
 
 export interface FrameworkConfig {
@@ -34,7 +36,6 @@ export const FRAMEWORKS: Record<Framework, FrameworkConfig> = {
         ];
       } catch {
         // If esbuild-svelte is not available, return empty array
-        // Bun may have native Svelte support
         return [];
       }
     },
@@ -47,10 +48,12 @@ export const FRAMEWORKS: Record<Framework, FrameworkConfig> = {
     },
     plugins: async () => {
       try {
-        const esbuildVue = await import('esbuild-vue');
+        // Try to load Vue 3 plugin
+        const esbuildVue = await import('esbuild-plugin-vue-next');
         return [esbuildVue.default()];
-      } catch {
-        // If esbuild-vue is not available, return empty array
+      } catch (e) {
+        console.error('Vue plugin load error:', e);
+        // Fallback or empty
         return [];
       }
     },
@@ -84,8 +87,26 @@ export function detectFramework(entryPath: string): Framework {
     return 'vanilla';
   }
   
+  // For .js/.ts files, inspect content to detect framework
+  try {
+    const content = readFileSync(entryPath, 'utf-8');
+    // Check for Svelte imports (e.g. import App from './App.svelte')
+    if (content.includes('.svelte')) {
+      return 'svelte';
+    }
+    // Check for Vue imports (e.g. import App from './App.vue' or 'vue' package)
+    if (content.includes('.vue') || content.includes('from \'vue\'') || content.includes('from "vue"')) {
+      return 'vue';
+    }
+    // Check for React imports
+    if (content.includes('react') || content.includes('React')) {
+      return 'react';
+    }
+  } catch {
+    // If file cannot be read, fall back to vanilla
+  }
+
   // Default to vanilla for .js/.ts files
   // User can override with --framework flag
   return 'vanilla';
 }
-
