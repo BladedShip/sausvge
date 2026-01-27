@@ -1,6 +1,6 @@
 import * as esbuild from 'esbuild';
 import { writeFileSync, mkdirSync } from 'fs';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
 import { wrapInSVG } from './template.js';
 import { FRAMEWORKS, type Framework } from './frameworks.js';
 import { processHTMLFile } from './html-processor.js';
@@ -45,6 +45,31 @@ function makeXMLCompliant(html: string): string {
   });
   
   return result;
+}
+
+// Build the runtime once
+async function buildRuntime(): Promise<string> {
+  try {
+    const runtimePath = resolve(process.cwd(), 'src/runtime/index.ts');
+    const result = await esbuild.build({
+      entryPoints: [runtimePath],
+      bundle: true,
+      write: false,
+      format: 'iife',
+      platform: 'browser',
+      target: 'es2020',
+      minify: true,
+      keepNames: false,
+    });
+
+    if (result.outputFiles && result.outputFiles[0]) {
+      return result.outputFiles[0].text;
+    }
+    return '';
+  } catch (e) {
+    console.warn('Failed to build runtime:', e);
+    return '';
+  }
 }
 
 export async function build(
@@ -97,7 +122,7 @@ export async function build(
   }
 
   try {
-    // Use esbuild API
+    // Build the app
     const buildEntryPoints = entryPoints.length > 0 ? entryPoints : [entryFile];
     const hasMultipleEntries = buildEntryPoints.length > 1;
     
@@ -149,7 +174,11 @@ export async function build(
       buildConfig.outfile = 'bundle.js'; // Virtual filename for output mapping (required for CSS)
     }
 
-    const result = await esbuild.build(buildConfig);
+    // Run parallel builds: App and Runtime
+    const [result, runtimeCode] = await Promise.all([
+      esbuild.build(buildConfig),
+      buildRuntime()
+    ]);
 
     // Extract JavaScript and CSS from output
     let jsCode = '';
@@ -221,8 +250,8 @@ export async function build(
       })();`;
     }
 
-    // Always include storage (SVGApp) for all frameworks
-    const svgContent = wrapInSVG(jsCode, cssCode, finalHtmlBody, true);
+    // Pass the bundled runtime code to the template
+    const svgContent = wrapInSVG(jsCode, cssCode, finalHtmlBody, runtimeCode);
 
     // Ensure output directory exists
     const outputDir = dirname(outFile);

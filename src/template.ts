@@ -5,9 +5,9 @@
  * @param js - JavaScript code (can be multiple script blocks separated by special marker)
  * @param css - CSS code
  * @param htmlBody - HTML body content (if provided, inserted directly; otherwise uses root div)
- * @param includeStorage - Whether to include SVGApp storage utility (defaults to true now)
+ * @param runtimeCode - The bundled code for the SVGApp runtime
  */
-export function wrapInSVG(js: string, css: string, htmlBody?: string, includeStorage: boolean = true): string {
+export function wrapInSVG(js: string, css: string, htmlBody?: string, runtimeCode: string = ''): string {
   // Split JS into multiple script blocks if needed (separated by <!--SCRIPT_SEPARATOR-->)
   const scriptBlocks = js.split('<!--SCRIPT_SEPARATOR-->').filter(s => s.trim());
   
@@ -60,83 +60,10 @@ export function wrapInSVG(js: string, css: string, htmlBody?: string, includeSto
   ).join('\n');
   
   // SVGApp storage utility
-  const storageScript = includeStorage ? `
+  const storageScript = runtimeCode ? `
     <script type="application/json" id="dataStore">{}</script>
     <script><![CDATA[
-    window.SVGApp = (function () {
-        const DATA_ID_ROOT = "dataStore";
-        const svgRef = document.getElementById('svgApp');
-
-        function _getSvgFileName() {
-            try {
-                const path = window.location.pathname;
-                const name = path.split('/').pop();
-                return name || 'app.svg';
-            } catch (e) { return 'app.svg'; }
-        }
-
-        function _getStorageDataId() {
-            return \`\${DATA_ID_ROOT}_\${_getSvgFileName()}\`;
-        }
-
-        function _readFromSVG() {
-            const elem = document.getElementById(DATA_ID_ROOT);
-            if (!elem) return {};
-            try { return JSON.parse(elem.textContent); } catch { return {}; }
-        }
-
-        function _readFromLocalStorage() {
-            try { return JSON.parse(localStorage.getItem(_getStorageDataId())) || {}; }
-            catch { return {}; }
-        }
-
-        function loadData() {
-            const svgData = _readFromSVG();
-            const lsData = _readFromLocalStorage();
-            // Merge strategies can be complex, here we prioritize localStorage but preserve history if any
-            return { ...svgData, ...lsData };
-        }
-
-        function _writeToLocalStorage(obj) {
-            try {
-                localStorage.setItem(_getStorageDataId(), JSON.stringify(obj));
-            } catch (e) {
-                console.warn('SVGApp: Failed to write to localStorage', e);
-            }
-        }
-
-        function saveData(obj) {
-            _writeToLocalStorage(obj);
-            // Note: We cannot write back to the SVG file itself from within the browser
-            // without a backend or user downloading a new file.
-        }
-
-        function init() {
-            if (svgRef) {
-                svgRef.setAttribute("width", "100%");
-                svgRef.setAttribute("height", "100%");
-                if(svgRef.hasAttribute("viewBox")) {
-                    svgRef.removeAttribute("viewBox");
-                }
-            }
-        }
-
-        function createSVGElement(tag, className) {
-             const XHTML_NS = "http://www.w3.org/1999/xhtml";
-             const elem = document.createElementNS(XHTML_NS, tag);
-             if(className) elem.setAttribute("class", className);
-             return elem;
-        }
-
-        return { loadData, saveData, init, createSVGElement };
-    })();
-
-    // Auto-init
-    if (typeof window !== 'undefined') {
-        window.addEventListener('DOMContentLoaded', () => {
-             if (window.SVGApp) window.SVGApp.init();
-        });
-    }
+${runtimeCode}
     ]]></script>` : '';
   
   return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" id="svgApp">
