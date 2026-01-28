@@ -2,6 +2,48 @@ import { readFileSync } from 'fs';
 import { dirname, resolve } from 'path';
 
 /**
+ * Converts HTML to XML-compliant format.
+ * In XML (SVG):
+ * 1. Self-closing tags like <input>, <img>, <br> must be self-closing: <input />
+ * 2. All attributes must have values (data attributes need values)
+ */
+export function makeXMLCompliant(html: string): string {
+  // List of self-closing HTML tags that need to be XML-compliant
+  const selfClosingTags = [
+    'input', 'img', 'br', 'hr', 'meta', 'link', 'area', 'base',
+    'col', 'embed', 'source', 'track', 'wbr'
+  ];
+
+  let result = html;
+
+  // For each self-closing tag, replace <tag ...> with <tag ... />
+  for (const tag of selfClosingTags) {
+    const regex = new RegExp(`<${tag}([^>]*?)(?<!/)>`, 'gi');
+    result = result.replace(regex, (match, attributes) => {
+      if (match.trim().endsWith('/>')) {
+        return match;
+      }
+      return `<${tag}${attributes} />`;
+    });
+  }
+
+  // Ensure all data attributes have values (XML requirement)
+  // Process each tag to handle data attributes
+  result = result.replace(/<(\w+)([^>]*?)>/g, (match, tagName, attributes) => {
+    // Process data attributes: ensure they all have values (empty string if no value provided)
+    // Match data attributes that don't have a value (not followed by =)
+    let processedAttributes = attributes.replace(/\s+data-([a-zA-Z0-9-]+)(?=\s|>|\/|$)/g, (dataMatch: string, attrName: string) => {
+      // This matches data attributes without values, so add empty string
+      return ` data-${attrName}=""`;
+    });
+
+    return `<${tagName}${processedAttributes}>`;
+  });
+
+  return result;
+}
+
+/**
  * Processes an HTML file to extract scripts, styles, and body content
  */
 export function processHTMLFile(htmlPath: string): {
@@ -77,4 +119,3 @@ export function processHTMLFile(htmlPath: string): {
     inlineStyles,
   };
 }
-

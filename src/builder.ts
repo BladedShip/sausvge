@@ -3,49 +3,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { wrapInSVG } from './template.js';
 import { FRAMEWORKS, type Framework } from './frameworks.js';
-import { processHTMLFile } from './html-processor.js';
-
-/**
- * Converts HTML to XML-compliant format.
- * In XML (SVG):
- * 1. Self-closing tags like <input>, <img>, <br> must be self-closing: <input />
- * 2. All attributes must have values (data attributes need values)
- */
-function makeXMLCompliant(html: string): string {
-  // List of self-closing HTML tags that need to be XML-compliant
-  const selfClosingTags = [
-    'input', 'img', 'br', 'hr', 'meta', 'link', 'area', 'base',
-    'col', 'embed', 'source', 'track', 'wbr'
-  ];
-  
-  let result = html;
-  
-  // For each self-closing tag, replace <tag ...> with <tag ... />
-  for (const tag of selfClosingTags) {
-    const regex = new RegExp(`<${tag}([^>]*?)(?<!/)>`, 'gi');
-    result = result.replace(regex, (match, attributes) => {
-      if (match.trim().endsWith('/>')) {
-        return match;
-      }
-      return `<${tag}${attributes} />`;
-    });
-  }
-  
-  // Ensure all data attributes have values (XML requirement)
-  // Process each tag to handle data attributes
-  result = result.replace(/<(\w+)([^>]*?)>/g, (match, tagName, attributes) => {
-    // Process data attributes: ensure they all have values (empty string if no value provided)
-    // Match data attributes that don't have a value (not followed by =)
-    let processedAttributes = attributes.replace(/\s+data-([a-zA-Z0-9-]+)(?=\s|>|\/|$)/g, (dataMatch: string, attrName: string) => {
-      // This matches data attributes without values, so add empty string
-      return ` data-${attrName}=""`;
-    });
-    
-    return `<${tagName}${processedAttributes}>`;
-  });
-  
-  return result;
-}
+import { processHTMLFile, makeXMLCompliant } from './html-processor.js';
 
 // Build the runtime once
 async function buildRuntime(): Promise<string> {
@@ -165,6 +123,19 @@ export async function build(
       
       // Plugins for framework-specific compilation
       plugins: plugins.length > 0 ? plugins : undefined,
+
+      // Alias 'sausvge/runtime' to the global window.SVGApp object
+      // But since user imports types, we just want to ensure it resolves to a global access at runtime.
+      // esbuild can't directly alias an import to a global variable easily without a plugin or shim.
+      // However, if the user imports './src/runtime/client.ts' (which uses window.SVGApp), it will bundle that shim.
+      // That shim is tiny and correct. So we just need to ensure the import PATH resolves correctly if they use 'sausvge/runtime'.
+      // Since we are not running in a real node_modules context for the example app (it's inside the repo),
+      // we might need to manually alias 'sausvge/runtime' to the source file if they use package import.
+      // For now, in our examples we will import relatively.
+      // If we wanted to support 'sausvge/runtime' import in the example, we could add alias:
+      alias: {
+        'sausvge/runtime': resolve(process.cwd(), 'src/runtime/client.ts')
+      }
     };
 
     // Use outdir for multiple entries, outfile for single entry

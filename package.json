@@ -4,6 +4,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "exports": {
+    ".": "./index.ts",
+    "./runtime": "./src/runtime/client.ts"
+  },
   "scripts": {
     "build:react": "bun bin/cli.ts build example/react/index.tsx dist/react-app.svg --framework react",
     "build:svelte": "bun bin/cli.ts build example/svelte/index.ts dist/svelte-app.svg --framework svelte",

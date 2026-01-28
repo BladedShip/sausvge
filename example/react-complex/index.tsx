@@ -1,11 +1,8 @@
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+// Use the importable runtime instead of declaring global
+import { SVGApp } from 'sausvge/runtime';
 import './styles.css';
-
-// Type definition for SVGApp global
-declare global {
-  var SVGApp: any;
-}
 
 // 1. Context & Reducer for State Management
 type State = {
@@ -144,7 +141,7 @@ const App = () => {
 
   // Load from SVGApp storage on mount
   useEffect(() => {
-    if (typeof SVGApp !== 'undefined') {
+    if (SVGApp) {
       const savedData = SVGApp.storage.getItem('todo_state');
       if (savedData) {
         console.log('Loaded state from storage:', savedData);
@@ -155,7 +152,7 @@ const App = () => {
 
   // Save to SVGApp storage on change
   useEffect(() => {
-    if (typeof SVGApp !== 'undefined') {
+    if (SVGApp) {
       SVGApp.storage.setItem('todo_state', state);
     }
   }, [state]);
